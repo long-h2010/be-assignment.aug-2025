@@ -14,6 +14,7 @@ from app.routers import (
     notifications,
     reports,
 )
+from app.database import Base, engine
 
 app = FastAPI(
     title="Task Management API",
@@ -22,6 +23,17 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+Base.metadata.create_all(bind=engine)
+
+app.on_event("startup")
+async def test_db_connection():
+    try:
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
+            print("Database connected successfully.")
+    except Exception as e:
+        print(f"Database connection failed: {e}")
 
 # CORS middleware
 app.add_middleware(
@@ -33,7 +45,7 @@ app.add_middleware(
 )
 
 # Mount static files for uploads
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
